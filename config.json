@@ -1,0 +1,14 @@
+{
+	"database" : {
+		"username" : "theridion",
+		"password" : "theridion",
+		"hostname" : "localhost",
+		"port"     : "2500",
+		"dbname"   : "theridion",
+		"dialect"  : "postgres"
+	},
+
+	"feeds" : {
+		"path" : "./feeds/"
+	}
+}
