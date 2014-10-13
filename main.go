@@ -8,7 +8,7 @@ package main
 
 import (
 	"github.com/Jinnmv/Theridion/configuration"
-	"github.com/Jinnmv/Theridion/feedConfig"
+	"github.com/Jinnmv/Theridion/feedManager"
 	"log"
 )
 
@@ -21,7 +21,7 @@ func main() {
 
 	//log.Println("Config: ", *configuration)
 
-	feedConfig, err := feedConfig.New(configuration.Feeds.Path)
+	feedConfig, err := feedManager.New(configuration.Feeds.Path)
 	if err != nil {
 		log.Fatalln("error when reading feed configuration: ", err)
 	}

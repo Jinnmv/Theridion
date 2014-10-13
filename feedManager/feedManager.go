@@ -1,4 +1,4 @@
-package feedConfig
+package feedManager
 
 import (
 	"encoding/json"
