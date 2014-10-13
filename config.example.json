@@ -1,0 +1,14 @@
+{
+	"database" : {
+		"username" : "username",
+		"password" : "password",
+		"hostname" : "localhost",
+		"port"     : "5432",
+		"dbName"   : "dbname",
+		"dialect"  : "postgres"
+	},
+
+	"feeds" : {
+		"path" : "./feeds/"
+	}
+}
