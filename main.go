@@ -7,7 +7,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/Jinnmv/Theridion/configuration"
 	"github.com/Jinnmv/Theridion/feedConfig"
 	"log"
@@ -20,13 +19,16 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	log.Println("Config: ", *configuration)
+	//log.Println("Config: ", *configuration)
 
 	feedConfig, err := feedConfig.New(configuration.Feeds.Path)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("error when reading feed configuration: ", err)
 	}
-	fmt.Println(feedConfig)
-	fmt.Println(len(*feedConfig))
+	//fmt.Println(feedConfig)
+
+	for i, feedConfItem := range *feedConfig {
+		log.Printf("[%d]: %s\n", i, feedConfItem)
+	}
 
 }

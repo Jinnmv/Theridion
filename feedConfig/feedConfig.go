@@ -2,8 +2,8 @@ package feedConfig
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
 )
@@ -21,7 +21,7 @@ type FeedConfig []struct {
 	} `json:"derivations"`
 }
 
-func (feedConfig *FeedConfig) fillConfig(fileName string) (*FeedConfig, error) {
+func (feedConfig *FeedConfig) FillConfig(fileName string) (*FeedConfig, error) {
 
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -36,7 +36,6 @@ func (feedConfig *FeedConfig) fillConfig(fileName string) (*FeedConfig, error) {
 		return nil, err
 	}
 
-	fmt.Println(newFeedConfig)
 	*feedConfig = append(*feedConfig, newFeedConfig...)
 	return &newFeedConfig, nil
 }
@@ -51,11 +50,11 @@ func New(feedsDir string) (*FeedConfig, error) {
 	}
 
 	for _, f := range files {
-		_, err = feedConfig.fillConfig(path.Join(feedsDir, f.Name()))
+		_, err = feedConfig.FillConfig(path.Join(feedsDir, f.Name()))
 		if err != nil {
-			return nil, err
+			log.Printf("Feed Config Manager: error when reading config file %s: %s", path.Join(feedsDir, f.Name()), err)
+			//return nil, err
 		}
-		//fmt.Println(f.Name())
 	}
 
 	return &feedConfig, nil
