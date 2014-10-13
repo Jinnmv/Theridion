@@ -25,10 +25,8 @@ func main() {
 	if err != nil {
 		log.Fatalln("error when reading feed configuration: ", err)
 	}
-	//fmt.Println(feedConfig)
 
-	for i, feedConfItem := range *feedConfig {
-		log.Printf("[%d]: %s\n", i, feedConfItem)
-	}
+	price := Price{}
+	err = price.Fill(feedConfig)
 
 }
