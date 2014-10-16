@@ -9,7 +9,9 @@ package main
 import (
 	"github.com/Jinnmv/Theridion/configuration"
 	"github.com/Jinnmv/Theridion/feedManager"
+	"io/ioutil"
 	"log"
+	"net/http"
 )
 
 func main() {
@@ -21,12 +23,29 @@ func main() {
 
 	//log.Println("Config: ", *configuration)
 
-	feedConfig, err := feedManager.New(configuration.Feeds.Path)
+	feedConfigs, err := feedManager.New(configuration.Feeds.Path)
 	if err != nil {
 		log.Fatalln("error when reading feed configuration: ", err)
 	}
 
 	price := Price{}
-	err = price.Fill(feedConfig)
+	err = price.Fill(feedConfigs)
 
+	//log.Println(feedConfig[0].Url)
+
+}
+
+func downloader(out chan string, url string) {
+	res, err := http.Get(url)
+	if err != nil {
+		log.Println(err)
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	res.Body.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	out <- string(body)
 }

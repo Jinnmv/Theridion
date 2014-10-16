@@ -23,6 +23,9 @@ type Configuration struct {
 	Feeds struct {
 		Path string `json:"path"`
 	} `json:"feeds"`
+	Http struct {
+		Workers byte `json:"workers"`
+	} `json:"http"`
 }
 
 func New(fileName string) (*Configuration, error) {
@@ -35,6 +38,7 @@ func New(fileName string) (*Configuration, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer file.Close()
 
 	configuration := Configuration{}
 

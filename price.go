@@ -22,9 +22,9 @@ type Price []struct {
 	UpdateDate   time.Time
 }
 
-func (price *Price) Fill(feedConfig *feedManager.FeedConfig) error {
-	for i, feedConfItem := range *feedConfig {
-		log.Printf("[%d]: %s\n", i, feedConfItem)
+func (price *Price) Fill(feedConfigs *feedManager.FeedConfigs) error {
+	for i, feedConfig := range *feedConfigs {
+		log.Printf("[%d]: %s\n", i, feedConfig)
 	}
 	return nil
 }
