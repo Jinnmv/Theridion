@@ -10,5 +10,9 @@
 
 	"feeds" : {
 		"path" : "./feeds/"
+	},
+
+	"http": {
+		"threads": 5
 	}
 }

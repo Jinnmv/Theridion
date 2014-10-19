@@ -7,45 +7,60 @@
 package main
 
 import (
-	"github.com/Jinnmv/Theridion/configuration"
-	"github.com/Jinnmv/Theridion/feedManager"
-	"io/ioutil"
 	"log"
-	"net/http"
+	"os"
+	"os/signal"
 )
 
 func main() {
 
-	configuration, err := configuration.New("config.json")
+	configuration := Configuration{}
+	err := configuration.LoadConfigFromFile("config.json")
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	//log.Println("Config: ", *configuration)
 
-	feedConfigs, err := feedManager.New(configuration.Feeds.Path)
+	feedConfigs, err := InitFeedsConfiguration(configuration.Feeds.Path)
 	if err != nil {
 		log.Fatalln("error when reading feed configuration: ", err)
 	}
 
-	price := Price{}
-	err = price.Fill(feedConfigs)
+	//price := Price{}
+	//err = price.Fill(feedConfigs)
+
+	//asyncHttpGet(feedConfigs)
+
+	//Подготовим каналы и балансировщик
+	feeds := make(chan *FeedData)
+	quit := make(chan bool)
+	b := new(Balancer)
+	b.init(feeds)
+
+	//Приготовимся перехватывать сигнал останова в канал keys
+	keys := make(chan os.Signal, 1)
+	signal.Notify(keys, os.Interrupt)
+
+	//Запускаем балансировщик и генератор
+	go b.balance(quit)
+	go asyncHttpGet(feeds, feedConfigs)
+
+	log.Printf("Started!")
+
+	//Основной цикл программы:
+	for {
+		select {
+		case <-keys: //пришла информация от нотификатора сигналов:
+			log.Println("CTRL-C: Ожидаю завершения активных загрузок")
+			quit <- true //посылаем сигнал останова балансировщику
+
+		case <-quit: //пришло подтверждение о завершении от балансировщика
+			log.Println("Загрузки завершены!")
+			return
+		}
+	}
 
 	//log.Println(feedConfig[0].Url)
 
-}
-
-func downloader(out chan string, url string) {
-	res, err := http.Get(url)
-	if err != nil {
-		log.Println(err)
-	}
-
-	body, err := ioutil.ReadAll(res.Body)
-	res.Body.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	out <- string(body)
 }

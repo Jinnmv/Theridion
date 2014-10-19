@@ -1,4 +1,4 @@
-package feedManager
+package main
 
 import (
 	"encoding/json"
@@ -21,9 +21,7 @@ type FeedConfig struct {
 	} `json:"derivations"`
 }
 
-type FeedConfigs []FeedConfig // TODO: use of type FeedConfigs []*FeedConfig
-
-func (feedConfigs *FeedConfigs) FillConfig(fileName string) (*FeedConfigs, error) {
+func readFeedConfig(feedConfigs []*FeedConfig, fileName string) ([]*FeedConfig, error) {
 
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -31,7 +29,7 @@ func (feedConfigs *FeedConfigs) FillConfig(fileName string) (*FeedConfigs, error
 	}
 	defer file.Close()
 
-	newFeedConfigs := FeedConfigs{}
+	newFeedConfigs := []*FeedConfig{}
 	decoder := json.NewDecoder(file)
 
 	err = decoder.Decode(&newFeedConfigs)
@@ -39,27 +37,28 @@ func (feedConfigs *FeedConfigs) FillConfig(fileName string) (*FeedConfigs, error
 		return nil, err
 	}
 
-	*feedConfigs = append(*feedConfigs, newFeedConfigs...)
-	return &newFeedConfigs, nil
+	//feedConfigs = append(feedConfigs, newFeedConfigs...)
+	return newFeedConfigs, nil
 }
 
-func New(feedsDir string) (*FeedConfigs, error) {
+func InitFeedsConfiguration(feedsDir string) ([]*FeedConfig, error) {
 
-	feedConfigs := FeedConfigs{}
+	feedConfigs := []*FeedConfig{}
 
 	files, err := ioutil.ReadDir(feedsDir)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, f := range files {
-		_, err = feedConfigs.FillConfig(path.Join(feedsDir, f.Name()))
+	for _, file := range files {
+		res, err := readFeedConfig(feedConfigs, path.Join(feedsDir, file.Name()))
 		if err != nil {
-			log.Printf("Feed Config Manager: error when reading config file %s: %s", path.Join(feedsDir, f.Name()), err)
-			//return nil, err
+			log.Printf("[ERROR]: Feed Config Manager: error when reading config file %s: %s", path.Join(feedsDir, file.Name()), err)
+		} else {
+			feedConfigs = append(feedConfigs, res...)
 		}
+
 	}
 
-	return &feedConfigs, nil
-
+	return feedConfigs, nil
 }

@@ -1,12 +1,11 @@
 package main
 
 import (
-	"github.com/Jinnmv/Theridion/feedManager"
 	"log"
 	"time"
 )
 
-type Price []struct {
+type Price struct {
 	Name         string
 	Category     string
 	SubCategory  string
@@ -22,8 +21,8 @@ type Price []struct {
 	UpdateDate   time.Time
 }
 
-func (price *Price) Fill(feedConfigs *feedManager.FeedConfigs) error {
-	for i, feedConfig := range *feedConfigs {
+func (price *Price) Fill(feedConfigs []*FeedConfig) error {
+	for i, feedConfig := range feedConfigs {
 		log.Printf("[%d]: %s\n", i, feedConfig)
 	}
 	return nil
