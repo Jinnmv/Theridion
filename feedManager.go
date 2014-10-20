@@ -21,7 +21,9 @@ type FeedConfig struct {
 	} `json:"derivations"`
 }
 
-func readFeedConfig(feedConfigs []*FeedConfig, fileName string) ([]*FeedConfig, error) {
+// type FeedConfigList []*FeedConfig
+
+func (feedConfigs []*FeedConfig, fileName string) ([]*FeedConfig, error) {
 
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -62,3 +64,11 @@ func InitFeedsConfiguration(feedsDir string) ([]*FeedConfig, error) {
 
 	return feedConfigs, nil
 }
+
+// define next mehods:
+// * NewFeedConfiguration - constructor
+// * (*FeedConfigList) LoadFromFile
+// * (*FeedConfigList) LoadFromDir
+// * (*FeedConfigList) Pop
+// * (*FeedConfigList) Push
+// * (*FeedConfigList) Append
