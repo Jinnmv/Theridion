@@ -15,11 +15,20 @@ type FeedData struct {
 
 func loader(ch chan *FeedData, feedConfigs []*FeedConfig) []*FeedData {
 	//ch := make(chan *FeedData)
+	//chFeedConfig := make(chan *FeedConfig)
 	wg := new(sync.WaitGroup)
 
 	feedData := []*FeedData{}
 	
-	// for { send all feedConfigs to channel }
+	// send all feedConfigs to channel
+	/*go func (chFeedConfig *FeedConfig, feedConfigs []*FeedConfig){
+		for {
+			feedConfig, err := feedConfigs.Pop()
+			if err != nil {
+				return
+			}
+		}
+	}(chFeedConfig, feedConfigs)*/
 
 	for _, feedConfig := range feedConfigs {
 		wg.Add(1)
