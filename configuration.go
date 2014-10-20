@@ -20,19 +20,22 @@ type Configuration struct {
 		DBName   string `json:"dbName"`
 		Dialect  string `json:"dialect"`
 	} `json:"database"`
+	
 	Feeds struct {
 		Path string `json:"path"`
 	} `json:"feeds"`
+	
 	Http struct {
 		Threads byte `json:"threads"`
 	} `json:"http"`
+	
 	Workers struct {
 		Count    byte `json:"count"`
 		Capacity byte `json:"capacity"`
 	} `json:"workers"`
 }
 
-func (configuration *Configuration) LoadConfigFromFile(fileName string) error {
+func NewConfiguration(fileName string) (*Configuration, error) {
 
 	if len(fileName) == 0 {
 		fileName = "config.json"
@@ -40,16 +43,18 @@ func (configuration *Configuration) LoadConfigFromFile(fileName string) error {
 
 	file, err := os.Open(fileName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer file.Close()
 
 	decoder := json.NewDecoder(file)
+	
+	configuration := *Configuration{}
 
-	err = decoder.Decode(&configuration)
+	err = decoder.Decode(configuration)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return configuration, nil
 }
