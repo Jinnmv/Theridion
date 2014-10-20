@@ -13,7 +13,7 @@ type FeedData struct {
 	Html       []byte
 }
 
-func asyncHttpGet(ch chan *FeedData, feedConfigs []*FeedConfig) []*FeedData {
+func loader(ch chan *FeedData, feedConfigs []*FeedConfig) []*FeedData {
 	//ch := make(chan *FeedData)
 	wg := new(sync.WaitGroup)
 
