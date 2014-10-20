@@ -27,23 +27,23 @@ func main() {
 	//price := Price{}
 	//err = price.Fill(feedConfigs)
 
-	//Подготовим каналы и балансировщик
+	//Init Channels and Balancer
 	feeds := make(chan *FeedData)
 	quit := make(chan bool)
 	b := new(Balancer)
 	b.init(feeds)
 
-	//Приготовимся перехватывать сигнал останова в канал keys
+	//Init OS signal interceptor ot channel keys
 	keys := make(chan os.Signal, 1)
 	signal.Notify(keys, os.Interrupt)
 
-	//Запускаем балансировщик и генератор
+	//Run Balancer and Loader
 	go b.balance(quit)
-	go asyncHttpGet(feeds, feedConfigs)
+	go loader(feeds, feedConfigs)
 
 	log.Printf("Started!")
 
-	//Основной цикл программы:
+	//Main cycle:
 	for {
 		select {
 		case <-keys: //пришла информация от нотификатора сигналов:
