@@ -14,13 +14,10 @@ import (
 
 func main() {
 
-	configuration := Configuration{}
-	err := configuration.LoadConfigFromFile("config.json")
+	configuration, err := NewConfiguration("config.json")
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	//log.Println("Config: ", *configuration)
 
 	feedConfigs, err := InitFeedsConfiguration(configuration.Feeds.Path)
 	if err != nil {
@@ -29,8 +26,6 @@ func main() {
 
 	//price := Price{}
 	//err = price.Fill(feedConfigs)
-
-	//asyncHttpGet(feedConfigs)
 
 	//Подготовим каналы и балансировщик
 	feeds := make(chan *FeedData)
