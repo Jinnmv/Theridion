@@ -5,10 +5,6 @@ import (
 	"sync"
 )
 
-//TODO: rewrite
-
-var IMGDIR = "./img"
-
 type Worker struct {
 	feeds   chan *FeedData  // канал для заданий
 	pending int             // кол-во оставшихся задач
