@@ -9,7 +9,7 @@ import (
 )
 
 type FeedData struct {
-	FeedConfig *FeedConfig
+	FeedConfig *FeedConfig	// TODO: *FeedConfig
 	Html       []byte
 }
 
@@ -18,6 +18,8 @@ func loader(ch chan *FeedData, feedConfigs []*FeedConfig) []*FeedData {
 	wg := new(sync.WaitGroup)
 
 	feedData := []*FeedData{}
+	
+	// for { send all feedConfigs to channel }
 
 	for _, feedConfig := range feedConfigs {
 		wg.Add(1)
