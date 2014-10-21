@@ -6,10 +6,10 @@ import (
 )
 
 type Worker struct {
-	feeds   chan *FeedData  // канал для заданий
-	pending int             // кол-во оставшихся задач
-	index   int             // позиция в куче
-	wg      *sync.WaitGroup //указатель на группу ожидания
+	feeds   chan *FeedConfig // канал для заданий
+	pending int              // кол-во оставшихся задач
+	index   int              // позиция в куче
+	wg      *sync.WaitGroup  //указатель на группу ожидания
 }
 
 func (w *Worker) work(done chan *Worker) {
@@ -23,6 +23,6 @@ func (w *Worker) work(done chan *Worker) {
 }
 
 //Загрузка изображения
-func download(feed *FeedData) {
-	log.Println("[DEBUG]: WORKER Processing feed (Regexp here)")
+func download(feed *FeedConfig) {
+	log.Printf("[DEBUG]: WORKER Processing feed (Regexp here) [%dbytes]", len(feed.Html))
 }

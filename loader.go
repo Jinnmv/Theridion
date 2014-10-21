@@ -8,18 +8,17 @@ import (
 	"sync"
 )
 
-type FeedData struct {
+/*type FeedData struct {
 	FeedConfig *FeedConfig	// TODO: *FeedConfig
 	Html       []byte
-}
+}*/
 
-func loader(ch chan *FeedData, feedConfigs []*FeedConfig) []*FeedData {
-	//ch := make(chan *FeedData)
+func loader(ch chan *FeedConfig, feeds Feeds) {
 	//chFeedConfig := make(chan *FeedConfig)
 	wg := new(sync.WaitGroup)
 
-	feedData := []*FeedData{}
-	
+	//feedData := []*FeedData{}
+
 	// send all feedConfigs to channel
 	/*go func (chFeedConfig *FeedConfig, feedConfigs []*FeedConfig){
 		for {
@@ -30,8 +29,9 @@ func loader(ch chan *FeedData, feedConfigs []*FeedConfig) []*FeedData {
 		}
 	}(chFeedConfig, feedConfigs)*/
 
-	for _, feedConfig := range feedConfigs {
+	for _, feedConfig := range feeds {
 		wg.Add(1)
+
 		go func(feedConfig *FeedConfig, wg *sync.WaitGroup) {
 			defer wg.Done()
 			log.Printf("[INFO]: Fetching url [%s]", feedConfig.Url)
@@ -43,13 +43,13 @@ func loader(ch chan *FeedData, feedConfigs []*FeedConfig) []*FeedData {
 			}
 			defer resp.Body.Close()
 
-			body, err := ioutil.ReadAll(resp.Body)
+			feedConfig.Html, err = ioutil.ReadAll(resp.Body)
 			if err != nil {
 				log.Printf("[ERROR]: Error when fetching url source [%s]: %s\n", feedConfig.Url, err)
 				return
 			}
 
-			ch <- &FeedData{feedConfig, body}
+			ch <- feedConfig
 
 		}(feedConfig, wg)
 
@@ -80,6 +80,6 @@ func loader(ch chan *FeedData, feedConfigs []*FeedConfig) []*FeedData {
 
 	}*/
 
-	return feedData
+	return
 
 }

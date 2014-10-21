@@ -8,12 +8,12 @@ import (
 
 //Балансировщик
 type Balancer struct {
-	pool     Pool            //Наша "куча" рабочих
-	done     chan *Worker    //Канал уведомления о завершении для рабочих
-	requests chan *FeedData  //Канал для получения новых заданий
-	flowctrl chan bool       //Канал для PMFC
-	queue    int             //Количество незавершенных заданий переданных рабочим
-	wg       *sync.WaitGroup //Группа ожидания для рабочих
+	pool     Pool             //Наша "куча" рабочих
+	done     chan *Worker     //Канал уведомления о завершении для рабочих
+	requests chan *FeedConfig //Канал для получения новых заданий
+	flowctrl chan bool        //Канал для PMFC
+	queue    int              //Количество незавершенных заданий переданных рабочим
+	wg       *sync.WaitGroup  //Группа ожидания для рабочих
 }
 
 // TODO: rewrite
@@ -24,8 +24,8 @@ var (
 )
 
 //Инициализируем балансировщик. Аргументом получаем канал по которому приходят задания
-func (b *Balancer) init(in chan *FeedData) {
-	b.requests = make(chan *FeedData)
+func (b *Balancer) init(in chan *FeedConfig) {
+	b.requests = make(chan *FeedConfig)
 	b.flowctrl = make(chan bool)
 	b.done = make(chan *Worker)
 	b.wg = new(sync.WaitGroup)
@@ -42,7 +42,7 @@ func (b *Balancer) init(in chan *FeedData) {
 	heap.Init(&b.pool)
 	for i := 0; i < WORKERS; i++ {
 		w := &Worker{
-			feeds:   make(chan *FeedData, WORKERSCAP),
+			feeds:   make(chan *FeedConfig, WORKERSCAP),
 			index:   0,
 			pending: 0,
 			wg:      b.wg,
@@ -70,7 +70,7 @@ func (b *Balancer) balance(quit chan bool) {
 				}
 				lastjobs = true // если да, поднимаем флаг завершения
 			} else {
-				log.Println("[DEBUG]: BALANCER New job received to Balancer", feed.FeedConfig.Url)
+				log.Println("[DEBUG]: BALANCER New job received to Balancer", feed.Url)
 				b.dispatch(feed) //иначе то отправляем рабочим
 			}
 
@@ -108,7 +108,7 @@ func (b *Balancer) finalize(quit chan bool) {
 }
 
 // Функция отправки задания
-func (b *Balancer) dispatch(feed *FeedData) {
+func (b *Balancer) dispatch(feed *FeedConfig) {
 	w := heap.Pop(&b.pool).(*Worker) //Берем из кучи самого незагруженного рабочего..
 	w.feeds <- feed                  //..и отправляем ему задание.
 	w.pending++                      //Добавляем ему "весу"..

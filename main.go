@@ -14,32 +14,36 @@ import (
 
 func main() {
 
-	configuration, err := NewConfiguration("config.json")
+	configuration := NewConfiguration()
+	err := configuration.LoadFromFile("config.json")
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	feedConfigs, err := InitFeedsConfiguration(configuration.Feeds.Path)
+	feeds := NewFeeds()
+	err = feeds.LoadFromDir(configuration.Feeds.Path)
 	if err != nil {
 		log.Fatalln("error when reading feed configuration: ", err)
 	}
+
+	log.Println("[DEBUG]: Feeds count", len(feeds))
 
 	//price := Price{}
 	//err = price.Fill(feedConfigs)
 
 	//Init Channels and Balancer
-	feeds := make(chan *FeedData)
-	quit := make(chan bool)
+	feedsCh := make(chan *FeedConfig)
+	quitCh := make(chan bool)
 	b := new(Balancer)
-	b.init(feeds)
+	b.init(feedsCh)
 
 	//Init OS signal interceptor ot channel keys
 	keys := make(chan os.Signal, 1)
 	signal.Notify(keys, os.Interrupt)
 
 	//Run Balancer and Loader
-	go b.balance(quit)
-	go loader(feeds, feedConfigs)
+	go b.balance(quitCh)
+	go loader(feedsCh, feeds)
 
 	log.Printf("Started!")
 
@@ -48,9 +52,9 @@ func main() {
 		select {
 		case <-keys: //пришла информация от нотификатора сигналов:
 			log.Println("CTRL-C: Ожидаю завершения активных загрузок")
-			quit <- true //посылаем сигнал останова балансировщику
+			quitCh <- true //посылаем сигнал останова балансировщику
 
-		case <-quit: //пришло подтверждение о завершении от балансировщика
+		case <-quitCh: //пришло подтверждение о завершении от балансировщика
 			log.Println("Загрузки завершены!")
 			return
 		}
