@@ -1,13 +1,13 @@
 package main
 
 import (
-	"time"
 	"log"
+	"time"
 )
 
 func timeTrack(start time.Time, name string) {
-    elapsed := time.Since(start)
-    log.Printf("%s took %ss", name, elapsed.Seconds())
+	elapsed := time.Since(start)
+	log.Printf("[TIMER]: %s took %f2 s", name, elapsed.Seconds())
 }
 
 // example:
