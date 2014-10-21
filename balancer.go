@@ -6,29 +6,26 @@ import (
 	"sync"
 )
 
-//Балансировщик
+// Balancer
 type Balancer struct {
-	pool     Pool             //Наша "куча" рабочих
-	done     chan *Worker     //Канал уведомления о завершении для рабочих
-	requests chan *FeedConfig //Канал для получения новых заданий
-	flowctrl chan bool        //Канал для PMFC
-	queue    int              //Количество незавершенных заданий переданных рабочим
-	wg       *sync.WaitGroup  //Группа ожидания для рабочих
+	pool         Pool             //Наша "куча" рабочих
+	done         chan *Worker     //Канал уведомления о завершении для рабочих
+	requests     chan *FeedConfig //Канал для получения новых заданий
+	flowctrl     chan bool        //Канал для PMFC
+	queue        int              //Количество незавершенных заданий переданных рабочим
+	wg           *sync.WaitGroup  //Группа ожидания для рабочих
+	workersCap   byte
+	workersCount byte
 }
 
-// TODO: rewrite
-var (
-	WORKERS    = 5 //количество рабочих
-	WORKERSCAP = 3 //размер очереди каждого рабочего
-	//ENDMESSAGE = "basta"
-)
-
 //Инициализируем балансировщик. Аргументом получаем канал по которому приходят задания
-func (b *Balancer) init(in chan *FeedConfig) {
+func (b *Balancer) init(in chan *FeedConfig, config *Configuration) {
 	b.requests = make(chan *FeedConfig)
 	b.flowctrl = make(chan bool)
 	b.done = make(chan *Worker)
 	b.wg = new(sync.WaitGroup)
+	b.workersCount = config.Workers.Count
+	b.workersCap = config.Workers.Capacity
 
 	//Запускаем наш Flow Control:
 	go func() {
@@ -40,9 +37,9 @@ func (b *Balancer) init(in chan *FeedConfig) {
 
 	//Инициализируем кучу и создаем рабочих:
 	heap.Init(&b.pool)
-	for i := 0; i < WORKERS; i++ {
+	for i := 0; i < int(b.workersCount); i++ {
 		w := &Worker{
-			feeds:   make(chan *FeedConfig, WORKERSCAP),
+			feeds:   make(chan *FeedConfig, b.workersCap),
 			index:   0,
 			pending: 0,
 			wg:      b.wg,
@@ -65,9 +62,11 @@ func (b *Balancer) balance(quit chan bool) {
 		case feed, ok := <-b.requests: //Получено новое задание (от flow controller)
 			if !ok || feed == nil { //Проверяем - а не кодовая ли это фраза?
 				log.Printf("[DEBUG]: BALANCER End of inputs pool size: %d, pool queue: %d\n", len(b.pool), b.queue)
+
 				if b.queue == 0 { // TODO: Refactor
 					b.finalize(quit)
 				}
+
 				lastjobs = true // если да, поднимаем флаг завершения
 			} else {
 				log.Println("[DEBUG]: BALANCER New job received to Balancer", feed.Url)
@@ -113,7 +112,7 @@ func (b *Balancer) dispatch(feed *FeedConfig) {
 	w.feeds <- feed                  //..и отправляем ему задание.
 	w.pending++                      //Добавляем ему "весу"..
 	heap.Push(&b.pool, w)            //..и отправляем назад в кучу
-	if b.queue++; b.queue < WORKERS*WORKERSCAP {
+	if b.queue++; b.queue < int(b.workersCount*b.workersCap) {
 		b.flowctrl <- true
 	}
 }
@@ -123,7 +122,7 @@ func (b *Balancer) completed(w *Worker) {
 	w.pending--
 	heap.Remove(&b.pool, w.index)
 	heap.Push(&b.pool, w)
-	if b.queue--; b.queue == WORKERS*WORKERSCAP-1 {
+	if b.queue--; b.queue == int(b.workersCount*b.workersCap-1) {
 		b.flowctrl <- true
 	}
 }
