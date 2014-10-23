@@ -23,7 +23,7 @@ func main() {
 	feeds := NewFeeds()
 	err = feeds.LoadFromDir(configuration.Feeds.Path)
 	if err != nil {
-		log.Fatalln("error when reading feed configuration: ", err)
+		log.Fatalln("Error when reading feed configuration: ", err)
 	}
 
 	log.Println("[DEBUG]: Feeds count", len(feeds))
@@ -43,7 +43,7 @@ func main() {
 
 	//Run Balancer and Loader
 	go b.balance(quitCh)
-	go loader(feedsCh, feeds)
+	go loader(feedsCh, &feeds)
 
 	log.Printf("Started!")
 

@@ -42,6 +42,7 @@ func (b *Balancer) init(in chan *FeedConfig, config *Configuration) {
 			feeds:   make(chan *FeedConfig, b.workersCap),
 			index:   0,
 			pending: 0,
+			id:      i,
 			wg:      b.wg,
 		}
 		go w.work(b.done)     //запускаем рабочего
@@ -74,13 +75,13 @@ func (b *Balancer) balance(quit chan bool) {
 			}
 
 		case w := <-b.done: //пришло уведомление, что рабочий закончил загрузку
-			log.Printf("[DEBUG]: BALANCER Worker #%d has completed a task, pool size: %d, pool queue: %d\n", w.index, len(b.pool), b.queue)
+			log.Printf("[DEBUG]: BALANCER Worker #%d has completed a task, pool size: %d, pool queue: %d\n", w.id, len(b.pool), b.queue)
 			b.completed(w) //обновляем его данные
 			if lastjobs {
 				log.Println("[DEBUG]: BALANCER Finalization started")
 				if w.pending == 0 { //если у рабочего кончились задания..
 					heap.Remove(&b.pool, w.index) //то удаляем его из кучи
-					log.Println("[DEBUG]: BALANCER Worker #%d has completed ALL tasks - removing, pool size:", w.index, len(b.pool))
+					log.Println("[DEBUG]: BALANCER Worker #%d has completed ALL tasks - removing, pool size:", w.id, len(b.pool))
 				}
 				if len(b.pool) == 0 { //а если куча стала пуста
 					//значит все рабочие закончили свои очереди
@@ -96,7 +97,7 @@ func (b *Balancer) finalize(quit chan bool) {
 	for _, worker := range b.pool {
 		if worker.pending == 0 { //если у рабочего кончились задания..
 			heap.Remove(&b.pool, worker.index) //то удаляем его из кучи
-			log.Printf("[DEBUG]: BALANCER Worker #%d has completed ALL tasks - removing, pool size: %d", worker.index, len(b.pool))
+			log.Printf("[DEBUG]: BALANCER Worker #%d has completed ALL tasks - removing, pool size: %d", worker.id, len(b.pool))
 		}
 		if len(b.pool) == 0 { //а если куча стала пуста
 			//значит все рабочие закончили свои очереди

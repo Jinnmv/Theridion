@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	_ "errors"
 	"io/ioutil"
 	"log"
 	"os"
@@ -31,9 +32,9 @@ func NewFeeds() Feeds {
 	return Feeds{}
 }
 
-func (feeds *Feeds) LoadFromFile(fileName string) error {
+func (feeds *Feeds) AppendFromFile(fileName string) error {
 
-	newFeeds := []FeedConfig{}
+	newFeeds := Feeds{}
 
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -48,9 +49,7 @@ func (feeds *Feeds) LoadFromFile(fileName string) error {
 		return err
 	}
 
-	for _, feed := range newFeeds {
-		*feeds = append(*feeds, &feed)
-	}
+	*feeds = append(*feeds, newFeeds...)
 
 	return nil
 }
@@ -63,7 +62,7 @@ func (feeds *Feeds) LoadFromDir(feedsDir string) error {
 	}
 
 	for _, file := range files {
-		err := feeds.LoadFromFile(path.Join(feedsDir, file.Name()))
+		err := feeds.AppendFromFile(path.Join(feedsDir, file.Name()))
 		if err != nil {
 			log.Printf("[ERROR]: Feed Config Manager: error when reading config file %s: %s", path.Join(feedsDir, file.Name()), err)
 		}
@@ -72,6 +71,19 @@ func (feeds *Feeds) LoadFromDir(feedsDir string) error {
 
 	return nil
 }
+
+/*func (feeds *Feeds) Pop() (*FeedConfig, error) {
+	if len(*feeds) == 0 {
+		return nil, errors.New("Can't pop empty stack")
+	}
+
+	fd := *feeds
+
+	x := fd[len(*feeds)-1]
+	*feeds = fd[:len(*feeds)-1]
+
+	return x, nil
+}*/
 
 // define next mehods:
 // * NewFeedConfiguration - constructor

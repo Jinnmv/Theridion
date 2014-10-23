@@ -14,7 +14,7 @@ type Price struct {
 	Price        uint
 	Currency     string
 	Sku          string
-	Market       string
+	MarketName   string
 	InStock      byte
 	URL          string
 	ImageURL     string
@@ -26,4 +26,9 @@ func (price *Price) Fill(feedConfigs []*FeedConfig) error {
 		log.Printf("[%d]: %s\n", i, feedConfig)
 	}
 	return nil
+}
+
+// TODO: temporary
+func ParsePrice(feedConfig *FeedConfig) {
+
 }

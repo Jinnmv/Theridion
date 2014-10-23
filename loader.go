@@ -9,62 +9,26 @@ import (
 	"time"
 )
 
-func loader(ch chan *FeedConfig, feeds Feeds) {
-	//chFeedConfig := make(chan *FeedConfig)
+func loader(ch chan *FeedConfig, feeds *Feeds) {
+	feedConfigCh := make(chan *FeedConfig)
 	wg := new(sync.WaitGroup)
 
-	//feedData := []*FeedData{}
-
-	// send all feedConfigs to channel
-	/*go func (chFeedConfig *FeedConfig, feedConfigs []*FeedConfig){
-		for {
-			feedConfig, err := feedConfigs.Pop()
-			if err != nil {
-				return
-			}
-		}
-	}(chFeedConfig, feedConfigs)*/
-
-	for _, feedConfig := range feeds {
+	for i := 0; i < 2; i++ {
 		wg.Add(1)
-
-		// TODO: put anonymous func to separate
-		go func(feedConfig *FeedConfig, wg *sync.WaitGroup) {
-			defer wg.Done()
-			defer timeTrack(time.Now(), feedConfig.Url)
-			log.Printf("[INFO]: Fetching url [%s]", feedConfig.Url)
-
-			resp, err := http.Get(feedConfig.Url)
-			if err != nil {
-				log.Printf("[ERROR]: Error when fetching url [%s]: %s\n", feedConfig.Url, err)
-				return
-			}
-			defer resp.Body.Close()
-
-			// Check for correct status code
-			if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-				log.Printf("[ERROR]: [%s] Get request status code: %d\n", feedConfig.Url, resp.StatusCode)
-				return
-			}
-
-			feedConfig.Html, err = ioutil.ReadAll(resp.Body)
-			if err != nil {
-				log.Printf("[ERROR]: Error when fetching url source [%s]: %s\n", feedConfig.Url, err)
-				return
-			}
-
-			ch <- feedConfig
-
-		}(feedConfig, wg)
+		go downloader(feedConfigCh, ch, wg)
 
 	}
 
-	go func() {
-		wg.Wait()
-		log.Println("[DEBUG]: LOADER All feeds are fetched")
-		ch <- nil
-		close(ch)
-	}()
+	// Send all feedConfigs to channel
+	for _, feedConfig := range *feeds {
+		feedConfigCh <- feedConfig
+	}
+
+	close(feedConfigCh)
+	wg.Wait()
+	log.Println("[DEBUG]: LOADER All feeds are fetched")
+	ch <- nil
+	close(ch)
 
 	/*for {
 		select {
@@ -86,4 +50,43 @@ func loader(ch chan *FeedConfig, feeds Feeds) {
 
 	return
 
+}
+
+func downloader(feedConfigCh chan *FeedConfig, outCh chan *FeedConfig, wg *sync.WaitGroup) {
+
+	defer wg.Done()
+
+	for {
+
+		// Fetch next Feed Config from the channel
+		feedConfig, ok := <-feedConfigCh
+		if !ok {
+			return
+		}
+
+		log.Printf("[INFO]: Fetching url [%s]", feedConfig.Url)
+
+		defer timeTrack(time.Now(), feedConfig.Url)
+		resp, err := http.Get(feedConfig.Url)
+		if err != nil {
+			log.Printf("[ERROR]: Error when fetching url [%s]: %s\n", feedConfig.Url, err)
+			continue
+		}
+		defer resp.Body.Close()
+
+		// Check for correct status code
+		if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+			log.Printf("[ERROR]: [%s] Get request status code: %d\n", feedConfig.Url, resp.StatusCode)
+			continue
+		}
+
+		feedConfig.Html, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Printf("[ERROR]: Error when fetching HTML from [%s]: %s\n", feedConfig.Url, err)
+			continue
+		}
+
+		log.Println("[DEBUG]: Sending to balancer", feedConfig.Url)
+		outCh <- feedConfig
+	}
 }
