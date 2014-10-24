@@ -15,6 +15,8 @@ type Worker struct {
 	wg      *sync.WaitGroup //указатель на группу ожидания
 }
 
+type Mapping map[string]interface{}
+
 func (w *Worker) work(done chan *Worker) {
 	for {
 		feed := <-w.feeds //читаем следующее задание
@@ -82,4 +84,12 @@ func parse(feed *FeedConfig) {
 
 	log.Printf("[DEBUG]: PARSER %+v", len(products))
 	return
+}
+
+func Deriviate (mapping Mapping, key string) interface{} {
+	value, ok := mapping[key]
+	if !ok {
+		return key
+	}
+	return value
 }
