@@ -13,6 +13,12 @@
 	},
 
 	"http": {
-		"threads": 5
+		"threads": 5,
+		"buffer": 10
+	},
+
+	"workers": {
+		"count": 4,
+		"capacity":3
 	}
 }
