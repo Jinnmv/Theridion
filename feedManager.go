@@ -12,12 +12,9 @@ import (
 type FeedConfig struct {
 	MarketName string            `json:"market`
 	Url        string            `json:"url"`
-	DataFields map[string]string `json:"dataFields`
+	Define     map[string]string `json:"define`
 
-	Parse struct {
-		Regex           string            `json:"regex"`
-		RegexDataFields map[string]string `json:"regexDataFields"`
-	} `json:"parse"`
+	Regex string `json:"regex"`
 
 	Derivations struct {
 		Mapping map[string]map[string]interface{} `json:"mapping"`

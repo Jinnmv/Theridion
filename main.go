@@ -35,7 +35,7 @@ func main() {
 	feedsCh := make(chan *FeedConfig)
 	quitCh := make(chan bool)
 	b := new(Balancer)
-	b.init(feedsCh, configuration)
+	b.init(feedsCh, configuration.Workers.Count, configuration.Workers.Capacity)
 
 	//Init OS signal interceptor ot channel keys
 	keys := make(chan os.Signal, 1)

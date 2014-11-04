@@ -13,7 +13,7 @@ func loader(ch chan *FeedConfig, feeds *Feeds) {
 	feedConfigCh := make(chan *FeedConfig)
 	wg := new(sync.WaitGroup)
 
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 2; i++ { // TODO: replace with value from config
 		wg.Add(1)
 		go downloader(feedConfigCh, ch, wg)
 
@@ -64,7 +64,7 @@ func downloader(feedConfigCh chan *FeedConfig, outCh chan *FeedConfig, wg *sync.
 			return
 		}
 
-		log.Printf("[INFO]: Fetching url [%s]", feedConfig.Url)
+		//log.Printf("[INFO]: Fetching url [%s]", feedConfig.Url)
 
 		defer timeTrack(time.Now(), feedConfig.Url)
 		resp, err := http.Get(feedConfig.Url)
@@ -86,7 +86,6 @@ func downloader(feedConfigCh chan *FeedConfig, outCh chan *FeedConfig, wg *sync.
 			continue
 		}
 
-		log.Println("[DEBUG]: Sending to balancer", feedConfig.Url)
 		outCh <- feedConfig
 	}
 }

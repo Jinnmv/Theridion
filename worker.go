@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"regexp"
-	"strconv"
+	_ "strconv"
 	"sync"
 )
 
@@ -29,9 +29,9 @@ func (w *Worker) work(done chan *Worker) {
 
 //Загрузка изображения
 func parse(feed *FeedConfig) {
-	products := []*Price{}
+	//products := []*Price{}
 
-	rg := *regexp.MustCompile(feed.Parse.Regex)
+	rg := *regexp.MustCompile(feed.Regex)
 
 	match := rg.FindAllStringSubmatch(string(feed.Html), -1)
 
@@ -40,15 +40,15 @@ func parse(feed *FeedConfig) {
 		return
 	}
 
-	for _, goods := range match {
+	/*for _, goods := range match {
 
 		price := Price{}
 		for i, name := range rg.SubexpNames() {
-			// Ignore the whole regexp match and unnamed groups
 
-			/*if i == 0 || name == "" {
+			// Ignore the whole regexp match and unnamed groups
+			if i == 0 || name == "" {
 				continue
-			}*/
+			}
 
 			switch name {
 			case "name":
@@ -76,17 +76,18 @@ func parse(feed *FeedConfig) {
 		}
 
 		price.MarketName = feed.MarketName
-		price.Category = feed.DataFields["category"]
-		price.SubCategory = feed.DataFields["SubCategory"]
+		price.Category = feed.Define["category"]
+		price.SubCategory = feed.Define["SubCategory"]
 
 		products = append(products, &price)
 	}
 
-	log.Printf("[DEBUG]: PARSER %+v", len(products))
+	log.Printf("[DEBUG]: PARSER %+v", len(products))*/
+	log.Printf("[DEBUG]: PARSER %s, count: %d", feed.Url, len(match))
 	return
 }
 
-func Deriviate (mapping Mapping, key string) interface{} {
+func Deriviate(mapping Mapping, key string) interface{} {
 	value, ok := mapping[key]
 	if !ok {
 		return key
