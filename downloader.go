@@ -9,62 +9,60 @@ import (
 	"time"
 )
 
-func loader(ch chan *FeedConfig, feeds *Feeds) {
-	feedConfigCh := make(chan *FeedConfig)
-	wg := new(sync.WaitGroup)
+type Downloader struct {
+	feeds        Feeds
+	threads      byte
+	feedConfigCh chan *FeedConfig
+	wg           *sync.WaitGroup
+}
 
-	for i := 0; i < 2; i++ { // TODO: replace with value from config
-		wg.Add(1)
-		go downloader(feedConfigCh, ch, wg)
+func NewDownloader() *Downloader {
+	return &Downloader{}
+}
+
+func (d *Downloader) Init(feeds Feeds, threads byte) {
+	d.feeds = feeds
+	d.threads = threads
+	d.feedConfigCh = make(chan *FeedConfig)
+	d.wg = new(sync.WaitGroup)
+}
+
+func (d *Downloader) Load(ch chan *FeedConfig) {
+
+	for i := 0; i < int(d.threads); i++ { // TODO: replace with value from config
+		d.wg.Add(1)
+		go d.fetch(ch)
 
 	}
 
 	// Send all feedConfigs to channel
-	for _, feedConfig := range *feeds {
-		feedConfigCh <- feedConfig
+	for _, feedConfig := range d.feeds {
+		d.feedConfigCh <- feedConfig
 	}
 
-	close(feedConfigCh)
-	wg.Wait()
+	close(d.feedConfigCh)
+	d.wg.Wait()
 	log.Println("[DEBUG]: LOADER All feeds are fetched")
 	ch <- nil
 	close(ch)
-
-	/*for {
-		select {
-		case r, ok := <-ch:
-			if ok {
-				log.Printf("[INFO]: %s was fetched %d bytes", r.FeedConfig.Url, len(r.Html))
-				feedData = append(feedData, r)
-			} else {
-				ch = nil
-				log.Println("[DEBUG]: chanel is not ok")
-			}
-
-			if len(feedData) == len(feedConfigs) {
-				return feedData
-			}
-		}
-
-	}*/
 
 	return
 
 }
 
-func downloader(feedConfigCh chan *FeedConfig, outCh chan *FeedConfig, wg *sync.WaitGroup) {
+func (d *Downloader) fetch(outCh chan *FeedConfig) {
 
-	defer wg.Done()
+	defer d.wg.Done()
 
 	for {
 
 		// Fetch next Feed Config from the channel
-		feedConfig, ok := <-feedConfigCh
+		feedConfig, ok := <-d.feedConfigCh
 		if !ok {
 			return
 		}
 
-		//log.Printf("[INFO]: Fetching url [%s]", feedConfig.Url)
+		log.Printf("[INFO]: Fetching url [%s]", feedConfig.Url)
 
 		defer timeTrack(time.Now(), feedConfig.Url)
 		resp, err := http.Get(feedConfig.Url)

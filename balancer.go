@@ -19,7 +19,7 @@ type Balancer struct {
 }
 
 //Инициализируем балансировщик. Аргументом получаем канал по которому приходят задания
-func (b *Balancer) init(in chan *FeedConfig, workersCount, workersCap byte) {
+func (b *Balancer) Init(in chan *FeedConfig, workersCount, workersCap byte) {
 	b.requests = make(chan *FeedConfig)
 	b.flowctrl = make(chan bool)
 	b.done = make(chan *Worker)
@@ -51,7 +51,7 @@ func (b *Balancer) init(in chan *FeedConfig, workersCount, workersCap byte) {
 }
 
 //Рабочая функция балансировщика получает аргументом канал уведомлений от главного цикла
-func (b *Balancer) balance(quit chan bool) {
+func (b *Balancer) Balance(quit chan bool) {
 	lastjob := false //Флаг завершения, поднимаем когда кончились задания
 	for {
 		select { //В цикле ожидаем коммуникации по каналам:
@@ -81,9 +81,8 @@ func (b *Balancer) balance(quit chan bool) {
 
 				b.flush()
 
-				if len(b.pool) == 0 { //а если куча стала пуста
-					//значит все рабочие закончили свои очереди
-					quit <- true //и можно отправлять сигнал подтверждения готовности к останову
+				if len(b.pool) == 0 { // All workers has finished their tasks
+					quit <- true // sending ready to quit
 					log.Println("[DEBUG]: BALANCER pool is empty - sending quit message")
 				}
 			}
@@ -103,7 +102,7 @@ func (b *Balancer) dispatch(feed *FeedConfig) {
 	}
 }
 
-//Task completed handler
+// Task completed handler
 func (b *Balancer) completed(w *Worker) {
 	w.pending--
 	heap.Remove(&b.pool, w.index)

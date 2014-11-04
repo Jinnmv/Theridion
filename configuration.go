@@ -27,6 +27,7 @@ type Configuration struct {
 
 	Http struct {
 		Threads byte `json:"threads"`
+		Buffer  byte `json:"buffer"`
 	} `json:"http"`
 
 	Workers struct {

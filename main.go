@@ -14,14 +14,14 @@ import (
 
 func main() {
 
-	configuration := NewConfiguration()
-	err := configuration.LoadFromFile("config.json")
+	config := NewConfiguration()
+	err := config.LoadFromFile("config.json")
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	feeds := NewFeeds()
-	err = feeds.LoadFromDir(configuration.Feeds.Path)
+	err = feeds.LoadFromDir(config.Feeds.Path)
 	if err != nil {
 		log.Fatalln("Error when reading feed configuration: ", err)
 	}
@@ -32,18 +32,21 @@ func main() {
 	//err = price.Fill(feedConfigs)
 
 	//Init Channels and Balancer
-	feedsCh := make(chan *FeedConfig)
+	feedsCh := make(chan *FeedConfig, config.Http.Buffer)
 	quitCh := make(chan bool)
-	b := new(Balancer)
-	b.init(feedsCh, configuration.Workers.Count, configuration.Workers.Capacity)
+	balancer := Balancer{}
+	balancer.Init(feedsCh, config.Workers.Count, config.Workers.Capacity)
 
 	//Init OS signal interceptor ot channel keys
 	keys := make(chan os.Signal, 1)
 	signal.Notify(keys, os.Interrupt)
 
 	//Run Balancer and Loader
-	go b.balance(quitCh)
-	go loader(feedsCh, &feeds)
+	go balancer.Balance(quitCh)
+
+	downloader := NewDownloader()
+	downloader.Init(feeds, config.Http.Threads)
+	go downloader.Load(feedsCh)
 
 	log.Printf("Started!")
 

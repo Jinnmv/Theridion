@@ -87,8 +87,9 @@ func parse(feed *FeedConfig) {
 	return
 }
 
-func Deriviate(mapping Mapping, key string) interface{} {
-	value, ok := mapping[key]
+func Deriviate(mappings Mapping, key string) interface{} {
+
+	value, ok := mappings[key]
 	if !ok {
 		return key
 	}
