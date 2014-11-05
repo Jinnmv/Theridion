@@ -10,14 +10,14 @@ import (
 )
 
 type FeedConfig struct {
-	MarketName string            `json:"market`
+	MarketName string            `json:"market"`
 	Url        string            `json:"url"`
-	Define     map[string]string `json:"define`
+	Define     map[string]string `json:"define"`
 
 	Regex string `json:"regex"`
 
 	Derivations struct {
-		Mapping map[string]map[string]interface{} `json:"mapping"`
+		Mapping map[string]map[string]string `json:"mapping"`
 	} `json:"derivations"`
 
 	Html []byte `json:"-"`
