@@ -34,8 +34,11 @@ func main() {
 	//Init Channels and Balancer
 	feedsCh := make(chan *FeedConfig, config.Http.Buffer)
 	quitCh := make(chan bool)
+	
+	price := PriceList{}
+	
 	balancer := Balancer{}
-	balancer.Init(feedsCh, config.Workers.Count, config.Workers.Capacity)
+	balancer.Init(feedsCh, config.Workers.Count, config.Workers.Capacity, price.Parse)
 
 	//Init OS signal interceptor ot channel keys
 	keys := make(chan os.Signal, 1)
