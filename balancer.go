@@ -20,13 +20,14 @@ type Balancer struct {
 }
 
 //Инициализируем балансировщик. Аргументом получаем канал по которому приходят задания
-func (b *Balancer) Init(in chan *FeedConfig, workersCount, workersCap byte) {
+func (b *Balancer) Init(in chan *FeedConfig, workersCount, workersCap byte, fn WorkerFunc) {
 	b.requests = make(chan *FeedConfig)
 	b.flowctrl = make(chan bool)
 	b.done = make(chan *Worker)
 	b.wg = new(sync.WaitGroup)
 	b.workersCount = workersCount
 	b.workersCap = workersCap
+	b.fn = fn
 
 	//Запускаем наш Flow Control:
 	go func() {
