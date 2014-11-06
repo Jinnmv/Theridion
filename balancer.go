@@ -16,6 +16,7 @@ type Balancer struct {
 	wg           *sync.WaitGroup  //Группа ожидания для рабочих
 	workersCap   byte
 	workersCount byte
+	fn           WorkerFunc
 }
 
 //Инициализируем балансировщик. Аргументом получаем канал по которому приходят задания
@@ -45,7 +46,8 @@ func (b *Balancer) Init(in chan *FeedConfig, workersCount, workersCap byte) {
 			id:      i,
 			wg:      b.wg,
 		}
-		go w.work(b.done)     //запускаем рабочего
+		//go w.work(b.done)     //запускаем рабочего
+		go w.work(b.done, b.fn)     //запускаем рабочего
 		heap.Push(&b.pool, w) //и заталкиваем его в кучу
 	}
 }
