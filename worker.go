@@ -12,15 +12,20 @@ type Worker struct {
 	wg      *sync.WaitGroup //указатель на группу ожидания
 }
 
-func (w *Worker) work(done chan *Worker) {
+type WorkerFunc func(feed) 
+
+func (w *Worker) work(done chan *Worker, fn WorkerFunc) {
 	for {
 		feed := <-w.feeds //читаем следующее задание
 		w.wg.Add(1)       //инкриминируем счетчик группы ожидания
 
-		price := PriceList{}
-		price.Parse(feed)
+		fn(feed)
+		
+		//price := PriceList{}
+		//price.Parse(feed)
 
 		w.wg.Done() //сигнализируем группе ожидания что закончили
 		done <- w   //показываем что завершили работу
 	}
 }
+
