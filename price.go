@@ -17,21 +17,79 @@ type Price struct {
 	Currency     string
 	Sku          string
 	MarketName   string
-	InStock      byte
+	InStock      string
 	URL          string
 	ImageURL     string
 	UpdateDate   time.Time
 }
 
-/*func (price *Price) Fill(feedConfigs []*FeedConfig) error {
-	for i, feedConfig := range feedConfigs {
-		log.Printf("[%d]: %s\n", i, feedConfig)
+func NewPrice() *Price {
+	return &Price{}
+}
+
+func (price *Price) Defaulting(defaultings map[string]string) {
+
+	for key, value := range defaultings {
+		switch key {
+		case "name":
+			price.Name = value
+		case "category":
+			price.Category = value
+		case "subCategory":
+			price.SubCategory = value
+		case "manufacturer":
+			price.Manufacturer = value
+		case "scale":
+			price.Scale = value
+		case "currency":
+			price.Currency = value
+		case "sku":
+			price.Sku = value
+		case "inStock":
+			price.InStock = value
+		case "url":
+			price.URL = value
+		case "imgUrl":
+			price.ImageURL = value
+		}
 	}
-	return nil
-}*/
+}
+
+func (price *Price) Mapping(mappings map[string]map[string]string, data, keys []string) {
+
+	for i, name := range keys {
+
+		switch name {
+		case "name":
+			price.Name = Map(mappings[name], data[i])
+		case "url":
+			price.URL = Map(mappings[name], data[i])
+		case "imgUrl":
+			price.ImageURL = Map(mappings[name], data[i])
+		case "manufacturer":
+			price.Manufacturer = Map(mappings[name], data[i])
+		case "sku":
+			price.Sku = Map(mappings[name], data[i])
+		case "price":
+			x, err := strconv.ParseUint(data[i], 10, 0)
+			if err == nil {
+				price.Price = uint(x)
+			}
+		case "currency":
+			price.Currency = Map(mappings[name], data[i])
+		case "scale":
+			price.Scale = Map(mappings[name], data[i])
+		case "inStock":
+			price.InStock = Map(mappings[name], data[i])
+		}
+
+	}
+
+}
 
 type PriceList []*Price
 
+// Builder
 func (products PriceList) Parse(feed *FeedConfig) PriceList {
 
 	rg := *regexp.MustCompile(feed.Regex)
@@ -45,50 +103,48 @@ func (products PriceList) Parse(feed *FeedConfig) PriceList {
 
 	for _, goods := range match {
 
-		price := Price{}
-		for i, name := range rg.SubexpNames() {
+		price := NewPrice()
+		price.MarketName = feed.MarketName
+
+		price.Defaulting(feed.Defaulting)
+
+		price.Mapping(feed.Mapping, goods[1:], rg.SubexpNames()[1:])
+
+		price.UpdateDate = time.Now()
+
+		/*for i, name := range rg.SubexpNames() {
 
 			// Ignore the whole regexp match and unnamed groups
 			if i == 0 || name == "" {
 				continue
 			}
 
-			goods[i] = Derivate(feed.Derivations.Mapping[name], goods[i])
-
 			switch name {
 			case "name":
-				price.Name = goods[i]
+				price.Name = Map(feed.Mapping[name], goods[i])
 			case "url":
-				price.URL = goods[i]
+				price.URL = Map(feed.Mapping[name], goods[i])
 			case "imgUrl":
-				price.ImageURL = goods[i]
+				price.ImageURL = Map(feed.Mapping[name], goods[i])
 			case "manufacturer":
-				price.Manufacturer = goods[i]
+				price.Manufacturer = Map(feed.Mapping[name], goods[i])
 			case "sku":
-				price.Sku = goods[i]
+				price.Sku = Map(feed.Mapping[name], goods[i])
 			case "price":
-				z, err := strconv.ParseUint(goods[i], 10, 64)
+				x, err := strconv.ParseUint(goods[i], 10, 0)
 				if err == nil {
-					price.Price = uint(z)
+					price.Price = uint(x)
 				}
 			case "currency":
-				price.Currency = goods[i]
+				price.Currency = Map(feed.Mapping[name], goods[i])
 			case "scale":
-				price.Scale = goods[i]
+				price.Scale = Map(feed.Mapping[name], goods[i])
 			case "inStock":
-				z, err := strconv.ParseUint(goods[i], 10, 8)
-				if err == nil {
-					price.InStock = byte(z)
-				}
+				price.InStock = Map(feed.Mapping[name], goods[i])
 			}
-		}
+		}*/
 
-		price.MarketName = feed.MarketName
-		price.Category = feed.Define["category"]
-		price.SubCategory = feed.Define["SubCategory"]
-		price.UpdateDate = time.Now()
-
-		products = append(products, &price)
+		products = append(products, price)
 	}
 
 	log.Printf("[DEBUG]: PARSER count %+v", len(products))
@@ -97,7 +153,7 @@ func (products PriceList) Parse(feed *FeedConfig) PriceList {
 	return products
 }
 
-func Derivate(mappings map[string]string, key string) string {
+func Map(mappings map[string]string, key string) string {
 
 	value, ok := mappings[key]
 	if !ok {

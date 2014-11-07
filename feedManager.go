@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	_ "errors"
 	"io/ioutil"
 	"log"
 	"os"
@@ -10,15 +9,13 @@ import (
 )
 
 type FeedConfig struct {
-	MarketName string            `json:"market"`
-	Url        string            `json:"url"`
-	Define     map[string]string `json:"define"`
+	MarketName string `json:"market"`
+	Url        string `json:"url"`
 
 	Regex string `json:"regex"`
 
-	Derivations struct {
-		Mapping map[string]map[string]string `json:"mapping"`
-	} `json:"derivations"`
+	Defaulting map[string]string            `json:"defaulting"`
+	Mapping    map[string]map[string]string `json:"mapping"`
 
 	Html []byte `json:"-"`
 }

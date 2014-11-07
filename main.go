@@ -7,6 +7,7 @@
 package main
 
 import (
+	"github.com/Jinnmv/Theridion/Balancer"
 	"log"
 	"os"
 	"os/signal"
@@ -32,13 +33,11 @@ func main() {
 	//err = price.Fill(feedConfigs)
 
 	//Init Channels and Balancer
-	feedsCh := make(chan *FeedConfig, config.Http.Buffer)
+	feedsChannel := make(chan interface{}, config.Http.Buffer)
 	quitCh := make(chan bool)
-	
-	price := PriceList{}
-	
-	balancer := Balancer{}
-	balancer.Init(feedsCh, config.Workers.Count, config.Workers.Capacity, price.Parse)
+
+	balancer := Balancer.NewBalancer()
+	balancer.Init(feedsChannel, workerJob config.Workers.Count, config.Workers.Capacity)
 
 	//Init OS signal interceptor ot channel keys
 	keys := make(chan os.Signal, 1)
@@ -49,7 +48,7 @@ func main() {
 
 	downloader := NewDownloader()
 	downloader.Init(feeds, config.Http.Threads)
-	go downloader.Load(feedsCh)
+	go downloader.Load(feedsChannel)
 
 	log.Printf("Started!")
 
@@ -68,4 +67,9 @@ func main() {
 
 	//log.Println(feedConfig[0].Url)
 
+}
+
+func workerJob(feed interface{}) {
+	price := PriceList{}
+	price.Parse(feed.(*FeedConfig))
 }

@@ -1,15 +1,17 @@
-package main
+package Balancer
 
-//Это будет наша "куча":
+// Heap
 type Pool []*Worker
 
-//Проверка кто меньше - в нашем случае меньше тот у кого меньше заданий:
+// Implementing Heap interface
+
+// Less - mean worker with lowest jobs count
 func (p Pool) Less(i, j int) bool { return p[i].pending < p[j].pending }
 
-//Вернем количество рабочих в пуле:
+// Workers count in pool
 func (p Pool) Len() int { return len(p) }
 
-//Реализуем обмен местами:
+// Swap
 func (p Pool) Swap(i, j int) {
 	if i >= 0 && i < len(p) && j >= 0 && j < len(p) {
 		p[i], p[j] = p[j], p[i]
@@ -17,7 +19,7 @@ func (p Pool) Swap(i, j int) {
 	}
 }
 
-//Заталкивание элемента:
+// Push Job
 func (p *Pool) Push(x interface{}) {
 	n := len(*p)
 	worker := x.(*Worker)
@@ -25,7 +27,7 @@ func (p *Pool) Push(x interface{}) {
 	*p = append(*p, worker)
 }
 
-//И выталкивание:
+// Pop Job
 func (p *Pool) Pop() interface{} {
 	old := *p
 	n := len(old)

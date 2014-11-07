@@ -27,11 +27,11 @@ func (d *Downloader) Init(feeds Feeds, threads byte) {
 	d.wg = new(sync.WaitGroup)
 }
 
-func (d *Downloader) Load(ch chan *FeedConfig) {
+func (d *Downloader) Load(outCh chan interface{}) {
 
-	for i := 0; i < int(d.threads); i++ { // TODO: replace with value from config
+	for i := 0; i < int(d.threads); i++ {
 		d.wg.Add(1)
-		go d.fetch(ch)
+		go d.fetch(outCh)
 
 	}
 
@@ -43,14 +43,14 @@ func (d *Downloader) Load(ch chan *FeedConfig) {
 	close(d.feedConfigCh)
 	d.wg.Wait()
 	log.Println("[DEBUG]: LOADER All feeds are fetched")
-	ch <- nil
-	close(ch)
+	outCh <- nil
+	close(outCh)
 
 	return
 
 }
 
-func (d *Downloader) fetch(outCh chan *FeedConfig) {
+func (d *Downloader) fetch(outCh chan interface{}) {
 
 	defer d.wg.Done()
 
