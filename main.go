@@ -11,12 +11,14 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"time"
 )
 
 func main() {
 
-	config := NewConfiguration()
-	err := config.LoadFromFile("config.json")
+	defer timeTrack(time.Now(), "Full run took:")
+
+	config, err := NewConfig("config.json")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -29,15 +31,22 @@ func main() {
 
 	log.Println("[DEBUG]: Feeds count", len(feeds))
 
-	//price := Price{}
-	//err = price.Fill(feedConfigs)
+	// Init Storage
+	storage := NewStorage(
+		config.Database.Dialect,
+		config.Database.Hostname,
+		config.Database.Port,
+		config.Database.DBName,
+		config.Database.Username,
+		config.Database.Password)
+	defer storage.Close()
 
 	//Init Channels and Balancer
 	feedsChannel := make(chan interface{}, config.Http.Buffer)
 	quitCh := make(chan bool)
 
 	balancer := Balancer.NewBalancer()
-	balancer.Init(feedsChannel, workerJob config.Workers.Count, config.Workers.Capacity)
+	balancer.Init(feedsChannel, workerJob, config.Workers.Count, config.Workers.Capacity)
 
 	//Init OS signal interceptor ot channel keys
 	keys := make(chan os.Signal, 1)
@@ -70,6 +79,34 @@ func main() {
 }
 
 func workerJob(feed interface{}) {
-	price := PriceList{}
-	price.Parse(feed.(*FeedConfig))
+	priceList := NewPriceList()
+	priceList.Parse(feed.(*FeedConfig))
+
+	config, err := GetConfigInstance("config.json")
+	if err != nil {
+		log.Fatalf("[FATAL]: Unable to load configuration: %v", err)
+	}
+
+	//Init DB
+	storage := GetStorageInstance(
+		config.Database.Dialect,
+		config.Database.Hostname,
+		config.Database.Port,
+		config.Database.DBName,
+		config.Database.Username,
+		config.Database.Password)
+
+	_, err = storage.Write(*priceList)
+	if err != nil {
+		log.Println("[DEBUG]: DB error when inserting data", err)
+	}
+
+	// reduce memory
+	//(feed(*FeedConfig)).Html = nil
+}
+
+func checkErr(err error, msg string) {
+	if err != nil {
+		log.Printf("%s: %+v", msg, err)
+	}
 }

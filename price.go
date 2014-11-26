@@ -2,25 +2,28 @@ package main
 
 import (
 	"log"
+	"net/url"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
 type Price struct {
-	Name         string
-	Category     string
-	SubCategory  string
-	Manufacturer string
-	Scale        string
-	Price        uint
-	Currency     string
-	Sku          string
-	MarketName   string
-	InStock      string
-	URL          string
-	ImageURL     string
-	UpdateDate   time.Time
+	Id           int64     `db:"id"`
+	Name         string    `db:"name"`
+	Category     string    `db:"category"`
+	SubCategory  string    `db:"sub_category"`
+	Manufacturer string    `db:"manufacturer"`
+	Scale        string    `db:"scale"`
+	Price        int       `db:"price"`
+	Currency     string    `db:"currency"`
+	Sku          string    `db:"sku"`
+	MarketName   string    `db:"market_name"`
+	InStock      string    `db:"in_stock"`
+	URL          string    `db:"url"`
+	ImageURL     string    `db:"image_url"`
+	UpdateDate   time.Time `db:"update_date"`
 }
 
 func NewPrice() *Price {
@@ -71,9 +74,9 @@ func (price *Price) Mapping(mappings map[string]map[string]string, data, keys []
 		case "sku":
 			price.Sku = Map(mappings[name], data[i])
 		case "price":
-			x, err := strconv.ParseUint(data[i], 10, 0)
+			x, err := strconv.Atoi(data[i])
 			if err == nil {
-				price.Price = uint(x)
+				price.Price = x
 			}
 		case "currency":
 			price.Currency = Map(mappings[name], data[i])
@@ -87,10 +90,35 @@ func (price *Price) Mapping(mappings map[string]map[string]string, data, keys []
 
 }
 
+func (price *Price) TrimName() { // TODO: implement sending a field required to trim
+
+	price.Name = strings.TrimSpace(price.Name)
+
+}
+
+func (price *Price) EnrichImageURL() {
+
+	if !strings.HasPrefix(price.ImageURL, "http") {
+		u, err := url.Parse(price.URL)
+		if err != nil {
+			log.Println("[WARNING]: Unable to parse Host URL:", price.URL)
+			return
+		}
+		price.ImageURL = strings.Join([]string{u.Scheme, "://", u.Host, "/", price.ImageURL}, "")
+	}
+
+}
+
 type PriceList []*Price
 
+func NewPriceList() *PriceList {
+	return &PriceList{}
+}
+
 // Builder
-func (products PriceList) Parse(feed *FeedConfig) PriceList {
+func (products *PriceList) Parse(feed *FeedConfig) *PriceList {
+
+	//defer timeTrack(time.Now(), "[TIMER] parsing")
 
 	rg := *regexp.MustCompile(feed.Regex)
 
@@ -109,6 +137,9 @@ func (products PriceList) Parse(feed *FeedConfig) PriceList {
 		price.Defaulting(feed.Defaulting)
 
 		price.Mapping(feed.Mapping, goods[1:], rg.SubexpNames()[1:])
+
+		price.EnrichImageURL()
+		price.TrimName()
 
 		price.UpdateDate = time.Now()
 
@@ -144,11 +175,10 @@ func (products PriceList) Parse(feed *FeedConfig) PriceList {
 			}
 		}*/
 
-		products = append(products, price)
+		*products = append(*products, price)
 	}
 
-	log.Printf("[DEBUG]: PARSER count %+v", len(products))
-	log.Printf("[DEBUG]: PARSER first: %+v", products[0])
+	log.Printf("[DEBUG]: PARSER count %+v", len(*products))
 
 	return products
 }

@@ -65,6 +65,7 @@ func (d *Downloader) fetch(outCh chan interface{}) {
 		log.Printf("[INFO]: Fetching url [%s]", feedConfig.Url)
 
 		defer timeTrack(time.Now(), feedConfig.Url)
+
 		resp, err := http.Get(feedConfig.Url)
 		if err != nil {
 			log.Printf("[ERROR]: Error when fetching url [%s]: %s\n", feedConfig.Url, err)
@@ -83,6 +84,8 @@ func (d *Downloader) fetch(outCh chan interface{}) {
 			log.Printf("[ERROR]: Error when fetching HTML from [%s]: %s\n", feedConfig.Url, err)
 			continue
 		}
+
+		//log.Printf("[INFO]: %s: %d Kb", feedConfig.Url, len(feedConfig.Html)/1000)
 
 		outCh <- feedConfig
 	}

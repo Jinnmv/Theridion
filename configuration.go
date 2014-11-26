@@ -11,7 +11,7 @@ import (
 	"os"
 )
 
-type Configuration struct {
+type Config struct {
 	Database struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
@@ -36,11 +36,24 @@ type Configuration struct {
 	} `json:"workers"`
 }
 
-func NewConfiguration() *Configuration {
-	return &Configuration{}
+var configInstance *Config
+
+func GetConfigInstance(fileName string) (*Config, error) {
+
+	if configInstance == nil {
+		var err error
+		configInstance, err = NewConfig(fileName)
+		if err != nil {
+			return nil, err
+		}
+
+	}
+	return configInstance, nil
 }
 
-func (configuration *Configuration) LoadFromFile(fileName string) error {
+func NewConfig(fileName string) (*Config, error) {
+
+	configInstance := Config{}
 
 	if len(fileName) == 0 {
 		fileName = "config.json"
@@ -48,18 +61,16 @@ func (configuration *Configuration) LoadFromFile(fileName string) error {
 
 	file, err := os.Open(fileName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer file.Close()
 
 	decoder := json.NewDecoder(file)
 
-	//configuration := *Configuration{}
-
-	err = decoder.Decode(configuration)
+	err = decoder.Decode(&configInstance)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &configInstance, nil
 }
