@@ -91,9 +91,11 @@ func (price *Price) Mapping(mappings map[string]map[string]string, data, keys []
 }
 
 func (price *Price) TrimName() { // TODO: implement sending a field required to trim
-
 	price.Name = strings.TrimSpace(price.Name)
+}
 
+func (p *Price) NormalizeManufacturer() {
+	p.Manufacturer = strings.Title(strings.ToLower(p.Manufacturer))
 }
 
 func (price *Price) EnrichImageURL() {
@@ -140,6 +142,7 @@ func (products *PriceList) Parse(feed *FeedConfig) *PriceList {
 
 		price.EnrichImageURL()
 		price.TrimName()
+		price.NormalizeManufacturer()
 
 		price.UpdateDate = time.Now()
 

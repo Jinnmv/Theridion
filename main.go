@@ -14,11 +14,13 @@ import (
 	"time"
 )
 
+var configFileName = "config.json"
+
 func main() {
 
 	defer timeTrack(time.Now(), "Full run took:")
 
-	config, err := NewConfig("config.json")
+	config, err := NewConfig(configFileName)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -29,7 +31,7 @@ func main() {
 		log.Fatalln("Error when reading feed configuration: ", err)
 	}
 
-	log.Println("[DEBUG]: Feeds count", len(feeds))
+	log.Println("[DEBUG]: Feeds count", len(*feeds))
 
 	// Init Storage
 	storage := NewStorage(
@@ -55,8 +57,7 @@ func main() {
 	//Run Balancer and Loader
 	go balancer.Balance(quitCh)
 
-	downloader := NewDownloader()
-	downloader.Init(feeds, config.Http.Threads)
+	downloader := NewDownloader(feeds, config.Http.Threads)
 	go downloader.Load(feedsChannel)
 
 	log.Printf("Started!")
@@ -82,7 +83,7 @@ func workerJob(feed interface{}) {
 	priceList := NewPriceList()
 	priceList.Parse(feed.(*FeedConfig))
 
-	config, err := GetConfigInstance("config.json")
+	config, err := GetConfigInstance(configFileName)
 	if err != nil {
 		log.Fatalf("[FATAL]: Unable to load configuration: %v", err)
 	}
@@ -98,11 +99,13 @@ func workerJob(feed interface{}) {
 
 	_, err = storage.Write(*priceList)
 	if err != nil {
-		log.Println("[DEBUG]: DB error when inserting data", err)
+		log.Println("[ERROR]: DB error when inserting data", err)
 	}
 
 	// reduce memory
-	//(feed(*FeedConfig)).Html = nil
+
+	//log.Println("[DEBUG]: JOB: Feed index:", GetFeedsInstance().IndexOf(feed.(*FeedConfig)))
+	//feed(*FeedConfig)).Html = nil
 }
 
 func checkErr(err error, msg string) {

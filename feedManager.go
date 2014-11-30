@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"os"
@@ -22,8 +23,18 @@ type FeedConfig struct {
 
 type Feeds []*FeedConfig
 
-func NewFeeds() Feeds {
-	return Feeds{}
+var feedsInst *Feeds
+
+func GetFeedsInstance() *Feeds {
+	if feedsInst == nil {
+		feedsInst = NewFeeds()
+	}
+	return feedsInst
+}
+
+func NewFeeds() *Feeds {
+	feedsInst = &Feeds{}
+	return feedsInst
 }
 
 func (feeds *Feeds) AppendFromFile(fileName string) error {
@@ -66,18 +77,30 @@ func (feeds *Feeds) LoadFromDir(feedsDir string) error {
 	return nil
 }
 
-/*func (feeds *Feeds) Pop() (*FeedConfig, error) {
-	if len(*feeds) == 0 {
+/*func (f *Feeds) IndexOf(fc *FeedConfig) int {
+	for i, item := range *f {
+		if item == fc {
+			return i
+		}
+	}
+	return -1
+}
+
+*/
+
+func (f *Feeds) Pop() (*FeedConfig, error) {
+
+	if len(*f) == 0 {
 		return nil, errors.New("Can't pop empty stack")
 	}
 
-	fd := *feeds
+	fd := *f
 
-	x := fd[len(*feeds)-1]
-	*feeds = fd[:len(*feeds)-1]
+	x := fd[len(*f)-1]
+	*f = fd[:len(*f)-1]
 
 	return x, nil
-}*/
+}
 
 // define next mehods:
 // * NewFeedConfiguration - constructor

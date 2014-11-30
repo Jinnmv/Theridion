@@ -34,5 +34,6 @@ func (p *Pool) Pop() interface{} {
 	item := old[n-1]
 	item.index = -1
 	*p = old[0 : n-1]
+
 	return item
 }

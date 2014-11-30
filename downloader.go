@@ -10,21 +10,17 @@ import (
 )
 
 type Downloader struct {
-	feeds        Feeds
+	feeds        *Feeds
 	threads      byte
 	feedConfigCh chan *FeedConfig
 	wg           *sync.WaitGroup
 }
 
-func NewDownloader() *Downloader {
-	return &Downloader{}
-}
-
-func (d *Downloader) Init(feeds Feeds, threads byte) {
-	d.feeds = feeds
-	d.threads = threads
-	d.feedConfigCh = make(chan *FeedConfig)
-	d.wg = new(sync.WaitGroup)
+func NewDownloader(feeds *Feeds, threads byte) *Downloader {
+	return &Downloader{feeds: feeds,
+		threads:      threads,
+		feedConfigCh: make(chan *FeedConfig),
+		wg:           new(sync.WaitGroup)}
 }
 
 func (d *Downloader) Load(outCh chan interface{}) {
@@ -36,7 +32,11 @@ func (d *Downloader) Load(outCh chan interface{}) {
 	}
 
 	// Send all feedConfigs to channel
-	for _, feedConfig := range d.feeds {
+	for {
+		feedConfig, err := d.feeds.Pop()
+		if err != nil {
+			break
+		}
 		d.feedConfigCh <- feedConfig
 	}
 
