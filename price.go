@@ -94,6 +94,14 @@ func (price *Price) TrimName() { // TODO: implement sending a field required to 
 	price.Name = strings.TrimSpace(price.Name)
 }
 
+func (p *Price) CleanUrl() {
+	p.URL = strings.Split(p.URL, "?")[0]
+}
+
+func (p *Price) RemoveFirstSlashImgUrl() {
+	p.ImageURL = strings.TrimPrefix(p.ImageURL, "/")
+}
+
 func (p *Price) NormalizeManufacturer() {
 	p.Manufacturer = strings.Title(strings.ToLower(p.Manufacturer))
 }
@@ -140,6 +148,7 @@ func (products *PriceList) Parse(feed *FeedConfig) *PriceList {
 
 		price.Mapping(feed.Mapping, goods[1:], rg.SubexpNames()[1:])
 
+		price.CleanUrl()
 		price.EnrichImageURL()
 		price.TrimName()
 		price.NormalizeManufacturer()
