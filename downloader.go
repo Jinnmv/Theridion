@@ -10,16 +10,16 @@ import (
 )
 
 type Downloader struct {
-	feeds        *Feeds
+	feeds        *FeedCollection
 	threads      byte
-	feedConfigCh chan *FeedConfig
+	feedConfigCh chan *Feed
 	wg           *sync.WaitGroup
 }
 
-func NewDownloader(feeds *Feeds, threads byte) *Downloader {
+func NewDownloader(feeds *FeedCollection, threads byte) *Downloader {
 	return &Downloader{feeds: feeds,
 		threads:      threads,
-		feedConfigCh: make(chan *FeedConfig),
+		feedConfigCh: make(chan *Feed),
 		wg:           new(sync.WaitGroup)}
 }
 

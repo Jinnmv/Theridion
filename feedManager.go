@@ -9,7 +9,7 @@ import (
 	"path"
 )
 
-type FeedConfig struct {
+type Feed struct {
 	MarketName string `json:"market"`
 	Url        string `json:"url"`
 
@@ -21,25 +21,25 @@ type FeedConfig struct {
 	Html []byte `json:"-"`
 }
 
-type Feeds []*FeedConfig
+type FeedCollection []*Feed
 
-var feedsInst *Feeds
+var feedColInst *FeedCollection
 
-func GetFeedsInstance() *Feeds {
-	if feedsInst == nil {
-		feedsInst = NewFeeds()
+func GetFeedColInstance() *FeedCollection {
+	if feedColInst == nil {
+		feedColInst = NewFeedCollection()
 	}
-	return feedsInst
+	return feedColInst
 }
 
-func NewFeeds() *Feeds {
-	feedsInst = &Feeds{}
-	return feedsInst
+func NewFeedCollection() *FeedCollection {
+	feedColInst = &FeedCollection{}
+	return feedColInst
 }
 
-func (feeds *Feeds) AppendFromFile(fileName string) error {
+func (fc *FeedCollection) AppendFromFile(fileName string) error {
 
-	newFeeds := Feeds{}
+	newFeeds := FeedCollection{}
 
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -54,12 +54,12 @@ func (feeds *Feeds) AppendFromFile(fileName string) error {
 		return err
 	}
 
-	*feeds = append(*feeds, newFeeds...)
+	*fc = append(*fc, newFeeds...)
 
 	return nil
 }
 
-func (feeds *Feeds) LoadFromDir(feedsDir string) error {
+func (fc *FeedCollection) LoadFromDir(feedsDir string) error {
 
 	files, err := ioutil.ReadDir(feedsDir)
 	if err != nil {
@@ -67,7 +67,7 @@ func (feeds *Feeds) LoadFromDir(feedsDir string) error {
 	}
 
 	for _, file := range files {
-		err := feeds.AppendFromFile(path.Join(feedsDir, file.Name()))
+		err := fc.AppendFromFile(path.Join(feedsDir, file.Name()))
 		if err != nil {
 			log.Printf("[ERROR]: Feed Config Manager: error when reading config file %s: %s", path.Join(feedsDir, file.Name()), err)
 		}
@@ -88,16 +88,16 @@ func (feeds *Feeds) LoadFromDir(feedsDir string) error {
 
 */
 
-func (f *Feeds) Pop() (*FeedConfig, error) {
+func (fc *FeedCollection) Pop() (*Feed, error) {
 
-	if len(*f) == 0 {
+	if len(*fc) == 0 {
 		return nil, errors.New("Can't pop empty stack")
 	}
 
-	fd := *f
+	fd := *fc
 
-	x := fd[len(*f)-1]
-	*f = fd[:len(*f)-1]
+	x := fd[len(*fc)-1]
+	*fc = fd[:len(*fc)-1]
 
 	return x, nil
 }

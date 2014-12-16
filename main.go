@@ -7,6 +7,7 @@
 package main
 
 import (
+	"errors"
 	"github.com/Jinnmv/Theridion/Balancer"
 	"log"
 	"os"
@@ -25,7 +26,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	feeds := NewFeeds()
+	feeds := NewFeedCollection()
 	err = feeds.LoadFromDir(config.Feeds.Path)
 	if err != nil {
 		log.Fatalln("Error when reading feed configuration: ", err)
@@ -34,14 +35,14 @@ func main() {
 	log.Println("[DEBUG]: Feeds count", len(*feeds))
 
 	// Init Storage
-	storage := NewStorage(
-		config.Database.Dialect,
-		config.Database.Hostname,
-		config.Database.Port,
-		config.Database.DBName,
-		config.Database.Username,
-		config.Database.Password)
-	defer storage.Close()
+	stor := NewStorage(config.Database, "items", Price{})
+	defer stor.Close()
+
+	storageInst, err := GetStorageInstance(*config)
+	if err != nil {
+		log.Printf("[ERROR]: Unable to init storage: %+v", err) // TODO: implement test run
+	}
+	defer storageInst.Close()
 
 	//Init Channels and Balancer
 	feedsChannel := make(chan interface{}, config.Http.Buffer)
@@ -79,9 +80,32 @@ func main() {
 
 }
 
+var storageInst *Storage
+
+func GetStorageInstance(config Config) (*Storage, error) {
+	if storageInst != nil {
+		return storageInst, nil
+	}
+
+	switch config.Database.Dialect {
+	case "csv":
+		return nil, errors.New("Not implemented using of CSV storage type")
+	case "postgres", "mysql", "sqlite3", "oracle", "sqlserver":
+		dbStorInst, err := NewDbStorage(config.Database.Dialect, config.Database.DSN, "items", Price{})
+		if err != nil {
+			return nil, err
+		}
+		storageInst := Storage(dbStorInst)
+
+		return &storageInst, nil
+	}
+
+	return nil, errors.New("[ERROR]: no associated storage found")
+}
+
 func workerJob(feed interface{}) {
-	priceList := NewPriceList()
-	priceList.Parse(feed.(*FeedConfig))
+	priceList := NewPriceCollection()
+	priceList.Parse(feed.(*Feed))
 
 	config, err := GetConfigInstance(configFileName)
 	if err != nil {
@@ -89,13 +113,7 @@ func workerJob(feed interface{}) {
 	}
 
 	//Init DB
-	storage := GetStorageInstance(
-		config.Database.Dialect,
-		config.Database.Hostname,
-		config.Database.Port,
-		config.Database.DBName,
-		config.Database.Username,
-		config.Database.Password)
+	storage := GetStorInstance(config.Database, "items", Price{})
 
 	_, err = storage.Write(*priceList)
 	if err != nil {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/url"
 	"regexp"
@@ -10,20 +11,20 @@ import (
 )
 
 type Price struct {
-	Id           int64     `db:"id"`
-	Name         string    `db:"name"`
-	Category     string    `db:"category"`
-	SubCategory  string    `db:"sub_category"`
-	Manufacturer string    `db:"manufacturer"`
-	Scale        string    `db:"scale"`
-	Price        int       `db:"price"`
-	Currency     string    `db:"currency"`
-	Sku          string    `db:"sku"`
-	MarketName   string    `db:"market_name"`
-	InStock      string    `db:"in_stock"`
-	URL          string    `db:"url"`
-	ImageURL     string    `db:"image_url"`
-	UpdateDate   time.Time `db:"update_date"`
+	Id           uint64         `db:"id"`
+	Name         string         `db:"name"`
+	Category     sql.NullString `db:"category"`
+	SubCategory  sql.NullString `db:"sub_category"`
+	Manufacturer string         `db:"manufacturer"`
+	Scale        string         `db:"scale"`
+	Price        int            `db:"price"`
+	Currency     string         `db:"currency"`
+	Sku          string         `db:"sku"`
+	MarketName   string         `db:"market_name"`
+	InStock      string         `db:"in_stock"`
+	URL          string         `db:"url"`
+	ImageURL     string         `db:"image_url"`
+	UpdateDate   time.Time      `db:"update_date"`
 }
 
 func NewPrice() *Price {
@@ -33,13 +34,14 @@ func NewPrice() *Price {
 func (price *Price) Defaulting(defaultings map[string]string) {
 
 	for key, value := range defaultings {
+		valid := len(value) != 0
 		switch key {
 		case "name":
 			price.Name = value
 		case "category":
-			price.Category = value
+			price.Category = sql.NullString{value, valid}
 		case "subCategory":
-			price.SubCategory = value
+			price.SubCategory = sql.NullString{value, valid}
 		case "manufacturer":
 			price.Manufacturer = value
 		case "scale":
@@ -98,35 +100,37 @@ func (p *Price) CleanUrl() {
 	p.URL = strings.Split(p.URL, "?")[0]
 }
 
-func (p *Price) RemoveFirstSlashImgUrl() {
-	p.ImageURL = strings.TrimPrefix(p.ImageURL, "/")
-}
-
 func (p *Price) NormalizeManufacturer() {
 	p.Manufacturer = strings.Title(strings.ToLower(p.Manufacturer))
 }
 
-func (price *Price) EnrichImageURL() {
+func (p *Price) EnrichImageURL() {
 
-	if !strings.HasPrefix(price.ImageURL, "http") {
-		u, err := url.Parse(price.URL)
+	p.ImageURL = strings.TrimPrefix(p.ImageURL, "/")
+
+	if !strings.HasPrefix(p.ImageURL, "http") {
+		u, err := url.Parse(p.URL)
 		if err != nil {
-			log.Println("[WARNING]: Unable to parse Host URL:", price.URL)
+			log.Println("[WARNING]: Unable to parse Host URL:", p.URL)
 			return
 		}
-		price.ImageURL = strings.Join([]string{u.Scheme, "://", u.Host, "/", price.ImageURL}, "")
+		p.ImageURL = strings.Join([]string{u.Scheme, "://", u.Host, "/", p.ImageURL}, "")
 	}
 
 }
 
-type PriceList []*Price
+func (p *Price) CleanEmptySubCategory() {
 
-func NewPriceList() *PriceList {
-	return &PriceList{}
+}
+
+type PriceCollection []*Price
+
+func NewPriceCollection() *PriceCollection {
+	return &PriceCollection{}
 }
 
 // Builder
-func (products *PriceList) Parse(feed *FeedConfig) *PriceList {
+func (pc *PriceCollection) Parse(feed *Feed) *PriceCollection {
 
 	//defer timeTrack(time.Now(), "[TIMER] parsing")
 
@@ -146,7 +150,7 @@ func (products *PriceList) Parse(feed *FeedConfig) *PriceList {
 
 		price.Defaulting(feed.Defaulting)
 
-		price.Mapping(feed.Mapping, goods[1:], rg.SubexpNames()[1:])
+		price.Mapping(feed.Mapping, goods[1:], rg.SubexpNames()[1:]) // skipping 1-st element as it's a whole string
 
 		price.CleanUrl()
 		price.EnrichImageURL()
@@ -155,44 +159,12 @@ func (products *PriceList) Parse(feed *FeedConfig) *PriceList {
 
 		price.UpdateDate = time.Now()
 
-		/*for i, name := range rg.SubexpNames() {
-
-			// Ignore the whole regexp match and unnamed groups
-			if i == 0 || name == "" {
-				continue
-			}
-
-			switch name {
-			case "name":
-				price.Name = Map(feed.Mapping[name], goods[i])
-			case "url":
-				price.URL = Map(feed.Mapping[name], goods[i])
-			case "imgUrl":
-				price.ImageURL = Map(feed.Mapping[name], goods[i])
-			case "manufacturer":
-				price.Manufacturer = Map(feed.Mapping[name], goods[i])
-			case "sku":
-				price.Sku = Map(feed.Mapping[name], goods[i])
-			case "price":
-				x, err := strconv.ParseUint(goods[i], 10, 0)
-				if err == nil {
-					price.Price = uint(x)
-				}
-			case "currency":
-				price.Currency = Map(feed.Mapping[name], goods[i])
-			case "scale":
-				price.Scale = Map(feed.Mapping[name], goods[i])
-			case "inStock":
-				price.InStock = Map(feed.Mapping[name], goods[i])
-			}
-		}*/
-
-		*products = append(*products, price)
+		*pc = append(*pc, price)
 	}
 
-	log.Printf("[DEBUG]: PARSER count %+v", len(*products))
+	log.Printf("[DEBUG]: PARSER count %+v", len(*pc))
 
-	return products
+	return pc
 }
 
 func Map(mappings map[string]string, key string) string {
@@ -205,3 +177,33 @@ func Map(mappings map[string]string, key string) string {
 }
 
 // Find Dublicates TODO: implement
+
+type PriceManager struct {
+	storage   Storage
+	PriceList PriceCollection
+}
+
+func NewPriceManager() *PriceManager {
+	pm := PriceManager{}
+
+	return &pm
+}
+
+func (pm *PriceManager) SetStorage(storage Storage) {
+	pm.storage = storage
+}
+
+func (pm *PriceManager) Write() (int, error) {
+
+	pl := make([]*interface{}, len(pm.PriceList)) // create slice container of interface{}
+	for i, v := range pl {                        // fill in content
+		pl[i] = v
+	}
+
+	return pm.storage.Write(pl)
+}
+
+func (pm *PriceManager) Load() error {
+
+	return nil //TODO: implement
+}

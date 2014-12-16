@@ -5,7 +5,8 @@
 		"hostname" : "localhost",
 		"port"     : "5432",
 		"dbName"   : "dbname",
-		"dialect"  : "postgres"
+		"dialect"  : "postgres",
+		"dsn"      : "user=theridion dbname=theridion password=theridion host=localhost port=5432"
 	},
 
 	"feeds" : {
