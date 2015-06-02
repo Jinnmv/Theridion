@@ -12,7 +12,7 @@ import (
 )
 
 type Config struct {
-	Database DbConnection `json:"database"`
+	Storage StorageConfig `json:"storage"`
 
 	Feeds struct {
 		Path string `json:"path"`
@@ -29,14 +29,15 @@ type Config struct {
 	} `json:"workers"`
 }
 
-type DbConnection struct {
+type StorageConfig struct {
+	Type string `json:"type"`
+	DSN  string `jsom:"dsn"`
+
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Hostname string `json:"hostname"`
 	Port     string `json:"port"`
 	DBName   string `json:"dbName"`
-	Dialect  string `json:"dialect"`
-	DSN      string `jsom:dsn`
 }
 
 var configInstance *Config

@@ -77,8 +77,9 @@ func (ds DbStorage) getDialectByName(dialectName string) (gorp.Dialect, error) {
 	return nil, errors.New("No dialect associated with provided name")
 }
 
-func (ds *DbStorage) Close() error {
-	return ds.dbMap.Db.Close()
+func (ds *DbStorage) Close() (err error) {
+	err = ds.dbMap.Db.Close()
+	return err
 }
 
 func (ds *DbStorage) Truncate() (err error) {
@@ -115,7 +116,7 @@ type Stor struct {
 
 var storInst *Stor
 
-func GetStorInstance(dbCon DbConnection, tableName string, tableStruct interface{}) *Stor {
+func GetStorInstance(dbCon StorageConfig, tableName string, tableStruct interface{}) *Stor {
 	if storInst == nil {
 		storInst = NewStorage(dbCon, tableName, tableStruct)
 	}
@@ -123,11 +124,11 @@ func GetStorInstance(dbCon DbConnection, tableName string, tableStruct interface
 	return storInst
 }
 
-func NewStorage(dbCon DbConnection, tableName string, tableStruct interface{}) *Stor {
+func NewStorage(dbCon StorageConfig, tableName string, tableStruct interface{}) *Stor {
 	storageInst := Stor{}
 	dbConnectionString := fmt.Sprintf("user=%s dbname=%s password=%s host=%s port=%s", dbCon.Username, dbCon.DBName, dbCon.Password, dbCon.Hostname, dbCon.Port)
 
-	db, err := sql.Open(dbCon.Dialect, dbConnectionString)
+	db, err := sql.Open(dbCon.Type, dbConnectionString)
 	if err != nil {
 		log.Fatalf("[DEBUG]: DB error DB driver: %+v", err)
 	}

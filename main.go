@@ -35,10 +35,10 @@ func main() {
 	log.Println("[DEBUG]: Feeds count", len(*feeds))
 
 	// Init Storage
-	stor := NewStorage(config.Database, "items", Price{})
+	stor := NewStorage(config.Storage, "items", Price{})
 	defer stor.Close()
 
-	storageInst, err := GetStorageInstance(*config)
+	storageInst, err := GetDbStorageInst(config.Storage.Type, config.Storage.DSN, "items", Price{})
 	if err != nil {
 		log.Printf("[ERROR]: Unable to init storage: %+v", err) // TODO: implement test run
 	}
@@ -82,16 +82,17 @@ func main() {
 
 var storageInst *Storage
 
+// GetStorageInstance ...
 func GetStorageInstance(config Config) (*Storage, error) {
 	if storageInst != nil {
 		return storageInst, nil
 	}
 
-	switch config.Database.Dialect {
+	switch config.Storage.Type {
 	case "csv":
 		return nil, errors.New("Not implemented using of CSV storage type")
 	case "postgres", "mysql", "sqlite3", "oracle", "sqlserver":
-		dbStorInst, err := NewDbStorage(config.Database.Dialect, config.Database.DSN, "items", Price{})
+		dbStorInst, err := NewDbStorage(config.Storage.Type, config.Storage.DSN, "items", Price{})
 		if err != nil {
 			return nil, err
 		}
@@ -113,7 +114,7 @@ func workerJob(feed interface{}) {
 	}
 
 	//Init DB
-	storage := GetStorInstance(config.Database, "items", Price{})
+	storage := GetStorInstance(config.Storage, "items", Price{})
 
 	_, err = storage.Write(*priceList)
 	if err != nil {

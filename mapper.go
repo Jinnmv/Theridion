@@ -22,12 +22,12 @@ type ModelsCatalog struct {
 	Sku          string `db:"sku"`
 }
 
-func NewMapper(dbCon DbConnection) *Mapper {
+func NewMapper(dbCon StorageConfig) *Mapper {
 
 	mapper := Mapper{}
 	dbConnectionString := fmt.Sprintf("user=%s dbname=%s password=%s host=%s port=%s", dbCon.Username, dbCon.DBName, dbCon.Password, dbCon.Hostname, dbCon.Port)
 
-	db, err := sql.Open(dbCon.Dialect, dbConnectionString)
+	db, err := sql.Open(dbCon.Type, dbConnectionString)
 	if err != nil {
 		log.Fatalf("[DEBUG]: DB error DB driver: %+v", err)
 	}

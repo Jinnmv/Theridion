@@ -11,13 +11,13 @@ import (
 )
 
 type Price struct {
-	Id           uint64         `db:"id"`
+	ID           uint64         `db:"id"`
 	Name         string         `db:"name"`
 	Category     sql.NullString `db:"category"`
 	SubCategory  sql.NullString `db:"sub_category"`
 	Manufacturer string         `db:"manufacturer"`
 	Scale        string         `db:"scale"`
-	Price        int            `db:"price"`
+	Price        int            `db:"price"` //uint?
 	Currency     string         `db:"currency"`
 	Sku          string         `db:"sku"`
 	MarketName   string         `db:"market_name"`
@@ -39,9 +39,9 @@ func (price *Price) Defaulting(defaultings map[string]string) {
 		case "name":
 			price.Name = value
 		case "category":
-			price.Category = sql.NullString{value, valid}
+			price.Category = sql.NullString{String: value, Valid: valid}
 		case "subCategory":
-			price.SubCategory = sql.NullString{value, valid}
+			price.SubCategory = sql.NullString{String: value, Valid: valid}
 		case "manufacturer":
 			price.Manufacturer = value
 		case "scale":
@@ -139,7 +139,7 @@ func (pc *PriceCollection) Parse(feed *Feed) *PriceCollection {
 	match := rg.FindAllStringSubmatch(string(feed.Html), -1)
 
 	if match == nil {
-		log.Printf("[DEBUG]: PARSER nothing matched on", feed.Url)
+		log.Printf("[DEBUG]: PARSER nothing matched on %s", feed.Url)
 		return nil
 	}
 
